@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load paginator %}
+{% load staticfiles %}
+{% block main-content %}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+          添加公众号
+      </div>
+      <div class="panel-body">
+        <form id="search-form" class="form-inline simple_form" action="{% url 'wechat.search' %}" >
+          <div class="form-group">
+              <lable for="id_query">公&nbsp;&nbsp;众&nbsp;&nbsp;号：</lable>
+              <input id="id_query" type="text" class="form-control" style="text-align: center;" name="query" required placeholder="逻辑思维 / LJSW888">
+          </div>
+          <button type="submit" class="btn btn-default">
+            <i class="fa fa-search"></i>
+          </button>
+        </form>
+        <div class="form-group" id="search-content" style="margin-top:10px;">
+
+        </div>
+
+        <form id="wechat-add-form" class="form-inline simple_form" action="{% url 'wechat.add' %}" method="post" >
+          {% csrf_token %}
+          <input type="hidden" name="name" required>
+          <input type="hidden" name="wechatid" required>
+          <input type="hidden" name="avatar" required>
+          <input type="hidden" name="qrcode" required>
+          <input type="hidden" name="intro">
+
+          <div class="form-group">
+              <lable for="id_frequency">爬取频率：</lable>
+              <input id="id_frequency" type="number" class="form-control wechat-frequency" name="frequency" required placeholder="100" value="100">
+              <span>&nbsp;分钟</span>
+          </div>
+          <button type="submit" class="btn btn-primary submit-btn">添加</button>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+
+    <div class="topics panel panel-default">
+      <div class="panel-heading">
+          公众号列表
+          <span class="pull-right"><a href="{{ params | remove_key:'status' | gen_get_params }}">所有</a> | <a href="{{ params | update_status:0 | gen_get_params }}">活跃</a> | <a href="{{ params | update_status:1 | gen_get_params }}">已禁用</a> | <a href="{{ params | update_status:2 | gen_get_params }}">已删除</a></span>
+      </div>
+      <div class="panel-body">
+        <table class="table table-striped table-hover wechat-table">
+          <thead>
+            <tr>
+              <th>#ID</th>
+              <th>头像</th>
+              <th>公众号和ID</th>
+              <th>爬取频率</th>
+              <th>下次爬取时间</th>
+              <th>最近1天文章</th>
+              <th>最近1周</th>
+              <th>文章总数</th>
+              <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;操作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for item in wechats %}
+            <tr class="{% if item.status == 2 %}text-delete{% endif %}{% if item.status == 1 %}text-disable{% endif %}">
+              <td><a href="{% url 'wechat.edit' item.id %}">{{ item.id}}</a></td>
+              <td><img src="{{ item.avatar | default:'/static/web/images/touxiang.jpg' }}" class="avatar-list"></td>
+              <td><h5><a href="{% url 'wechat.wechat_topics' item.id %}">{{ item.name}}</a></h5>
+                <span class="wechat-id"><a target="_blank" href="http://weixin.sogou.com/weixin?type=1&query={{ item.wechatid }}&ie=utf8">{{ item.wechatid }}</a></span>
+              </td>
+              <td>{{ item.frequency}}</td>
+              <td>{% if item.frequency > 0 %}{{ item.next_crawl_time}}{% else %}N/A{% endif %}</td>
+              <td><a href="{% url 'wechat.wechat_topics' item.id %}">{{ item.last_day_topics_count}}</a></td>
+              <td><a href="{% url 'wechat.wechat_topics' item.id %}">{{ item.last_week_topics_count}}</a></td>
+              <td><a href="{% url 'wechat.wechat_topics' item.id %}">{{ item.total_topics_count}}</a></td>
+              <td>
+                <a href="{% url 'wechat.wechat_topics' item.id %}">已爬取文章</a><br/>
+                <a target="_blank" href="http://weixin.sogou.com/weixin?type=1&query={{ item.wechatid }}&ie=utf8">源文章列表</a><br/>
+                <a href="/admin/wechat/wechat/{{ item.id }}/">编辑</a> |
+                <a href="{% url 'wechat.wechat_delete' item.id %}?next={{ request.get_full_path }}">删除</a>
+              </td>
+
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-footer clearfix">
+        {% paginator wechats %}
+      </div>
+
+    </div><!--.topics-->
+
+  </div>
+</div>
+{% endblock %}
+
+{% block footer-js %}
+<script src="{% static 'jquery.form.js' %}"></script>
+<script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    // 微信搜索
+    $('#search-form').ajaxForm(function(data) {
+        //alert(data);
+        $('#search-content').hide().html(data).show('slow');
+    });
+
+});
+var wechatInfo = {};
+function selectWechat(node, name, wechatid, avatar, qrcode, intro){
+  // 保存信息
+  $("input[name='name']").val(name);
+  $("input[name='wechatid']").val(wechatid);
+  $("input[name='avatar']").val(avatar);
+  $("input[name='qrcode']").val(qrcode);
+  $("input[name='intro']").val(intro);
+  // 显示选中状态
+  $(node).addClass('selected');
+  // 隐藏兄弟节点
+  $(node).prevAll().hide('slow');
+  $(node).nextAll().hide('slow');
+}
+</script>
+{% endblock %}

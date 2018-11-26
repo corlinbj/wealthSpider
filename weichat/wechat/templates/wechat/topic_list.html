@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load paginator %}
+{% block main-content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <form class="simple_form" action="{% url 'wechat.topic_add' %}" method="post">
+        {% csrf_token %}
+          <div class="form-group">
+              <input id="id_url" type="url" class="form-control pull-left" style="width: 90%;" name="url" required placeholder="添加新文章, 文章链接: http://mp.weixin.qq.com/s?__biz=...">
+
+              <button type="submit" class="btn btn-default pull-right">
+                添加
+              </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="topics panel panel-default">
+      <div class="panel-heading">
+        文章列表
+      </div>
+      <div class="panel-body">
+        <table class="table table-striped table-hover wechat-table">
+          <thead>
+            <tr>
+              <th>#ID</th>
+              <th>头像</th>
+              <th>标题</th>
+              <th>原文链接</th>
+              <th>公众号</th>
+              <th>时间</th>
+              <th>阅读数</th>
+              <th>点赞数</th>
+              <th>是否可用</th>
+              <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;操作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for item in topics %}
+            {% with wechat=item.wechat %}
+            <tr>
+              <td>{{ item.id}}</td>
+              <td><img src="{{ item.avatar| default:'/static/web/images/touxiang.jpg'}}" class="topic-avatar"> </td>
+              <td><a target="_blank" href="{% url 'wechat.topic_detail' item.id %}">{{ item.title}}</a></td>
+              <td><a target="_blank" href="{{ item.url }}"><i class="fa fa-weixin fa-lg"></i></a></td>
+              <td><a target="_blank" href="{% url 'wechat.wechat_topics' wechat.id %}">{{ wechat.name}}</a></td>
+              <td>{{ item.publish_time}}</td>
+              <td>{{ item.read_num }}</td>
+              <td>{{ item.like_num }}</td>
+              <td>{{ item.available }}</td>
+              <td>
+                {% if wechat.status == 2 %}
+                  公众号已删除
+                {% else %}
+                  <a href="{% url 'wechat.wechat_delete' wechat.id %}?next={{ request.get_full_path }}">删除公众号</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endwith %}
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="panel-footer clearfix">
+        {% paginator topics %}
+      </div>
+    </div><!--.topics-->
+
+  </div>
+</div>
+{% endblock %}
