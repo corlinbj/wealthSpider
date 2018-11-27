@@ -255,6 +255,27 @@ class Weibo:
             traceback.print_exc()
 
     # 将爬取的信息写入文件
+    def write_content(self):
+
+        try:
+            result=""
+            for i in range(1, self.weibo_num2 + 1):
+                text =  self.weibo_content[i - 1]
+                result = result + text
+            file_dir = os.path.split(os.path.realpath(__file__))[
+                0] + os.sep + "weibo"
+            if not os.path.isdir(file_dir):
+                os.mkdir(file_dir)
+            file_path = file_dir + os.sep + "%d" % self.user_id + "_content.txt"
+            f = open(file_path, "wb")
+            f.write(result.encode(sys.stdout.encoding))
+            f.close()
+            print(u"微博写入文件完毕，保存路径:")
+            print(file_path)
+        except Exception as e:
+            print("Error: ", e)
+            traceback.print_exc()
+
     def write_txt(self):
         try:
             if self.filter:
@@ -299,6 +320,7 @@ class Weibo:
             self.get_user_info()
             self.get_weibo_info()
             self.write_txt()
+            self.write_content()
             print(u"信息抓取完毕")
             print(
                 "===")
@@ -309,7 +331,7 @@ class Weibo:
 def main():
     try:
         # 使用实例,输入一个用户id，所有信息都会存储在wb实例中
-        user_id = 2643477111  # 可以改成任意合法的用户id（爬虫的微博id除外）
+        user_id = 2464268033  # 可以改成任意合法的用户id（爬虫的微博id除外）
         filter = 0  # 值为0表示爬取全部微博（原创微博+转发微博），值为1表示只爬取原创微博
         wb = Weibo(user_id, filter)	 # 调用Weibo类，创建微博实例wb
         wb.start()  # 爬取微博信息
